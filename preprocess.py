@@ -1,9 +1,8 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
 import re
 import argparse
-import xlsxwriter
 
 parser = argparse.ArgumentParser(description='Preprocess photometry data')
 parser.add_argument('--s405', help='405 file', type=str)
@@ -35,12 +34,18 @@ if s405.BLOCK[0] != s470.BLOCK[0]:
     exit()
 
 # extract info from file
-tank = s470.TANK[0]
-block = s470.BLOCK[0]
-event = s470.EVENT[0]
-chan = s470.CHAN[0]
-freq = s470.Sampling_Freq[0]
-pts = s470.NumOfPoints[0]
+if 'TANK' in s470.columns:
+    tank = s470.TANK[0]
+if 'BLOCK' in s470.columns:
+    block = s470.BLOCK[0]
+if 'EVENT' in s470.columns:
+    event = s470.EVENT[0]
+if 'CHAN' in s470.columns:
+    chan = s470.CHAN[0]
+if 'Sampling_Freq' in s470.columns:
+    freq = s470.Sampling_Freq[0]
+if 'NumOfPoints' in s470.columns:
+    pts = s470.NumOfPoints[0]
 column_order = s470.columns
 
 # adjust sampling frequncy
@@ -113,14 +118,22 @@ plt.ylabel('Signal (normalized)')
 plt.show()
 
 # - write data to XLSX --------------------------------------------------------
-print('\nWriting output to XLSX file: ' + args.outfile)
-s470['TANK'] = tank
-s470['BLOCK'] = block
-s470['EVENT'] = event
-s470['CHAN'] = chan
+print('\nWriting output to CSV file: ' + args.outfile)
+columns_to_keep = list()
+if 'TANK' in column_order:
+    s470['TANK'] = tank
+    columns_to_keep.append('TANK')
+if 'BLOCK' in column_order:
+    s470['BLOCK'] = block
+    columns_to_keep.append('BLOCK')
+if 'EVENT' in column_order:
+    s470['EVENT'] = event
+    columns_to_keep.append('EVENT')
+if 'CHAN' in column_order:
+    s470['CHAN'] = chan
+    columns_to_keep.append('CHAN')
 s470['Sampling_Freq'] = args.freq
-s470 = s470[['TANK', 'BLOCK', 'EVENT', 'CHAN', 'Sampling_Freq', 'TIME', 'DO', 'norm']]
-writer = pd.ExcelWriter(path=args.outfile, engine='xlsxwriter')
-workbook = writer.book
-s470.to_excel(writer, sheet_name='s470', index=False)
-workbook.close()
+for item in ['Sampling_Freq', 'TIME', 'D0', 'norm']:
+    columns_to_keep.append(item)
+s470 = s470[columns_to_keep]
+s470.to_csv(args.outfile, index=False)
