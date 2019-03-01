@@ -6,7 +6,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Preprocess photometry data')
 parser.add_argument('--s405', help='405 file', type=str)
-parser.add_argument('--s470', help='405 file', type=str)
+parser.add_argument('--s470', help='470 file', type=str)
 parser.add_argument('--freq', help='sampling frequency for output (Hz)', type=float)
 parser.add_argument('--outfile', help='specify path for output XLSX file', \
                     default='470.xlsx')

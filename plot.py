@@ -6,7 +6,8 @@ import seaborn as sns
 
 parser = argparse.ArgumentParser(description='Plot data')
 parser.add_argument('file', help='data file from combine.py', type=str)
-parser.add_argument('plottype', help='plot type', type=str)
+parser.add_argument('plottype', help='plot type', type=str,\
+                    options=['line','heatmap'])
 parser.add_argument('--treatment', help='treatment name', type=str)
 args = parser.parse_args()
 
@@ -19,5 +20,6 @@ if args.plottype == 'line':
     plt.show()
 
 if args.plottype == 'heatmap':
-    sns.lineplot(x='TIMErel', y='norm', hue='sample', data=df)
+    df = df.spread(index='sample', columns='TIMErel', values='norm')
+    sns.heatmap(df)
     plt.show()
