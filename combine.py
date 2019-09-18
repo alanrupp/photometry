@@ -14,7 +14,7 @@ def check_concordance(files, starts):
         exit()
 
 def sampling_check(files):
-    freqs = [pd.read_csv(x, nrows=1).Sampling_Freq for x in files]
+    freqs = [pd.read_csv(x, nrows=1).Sampling_Freq[0] for x in files]
     samples = [re.findall('[A-Za-z0-9]+(?=\.csv)', file)[0] for file in files]
     df = pd.DataFrame({'samples': samples, 'freqs': freqs})
     if len(set(freqs)) > 1:
