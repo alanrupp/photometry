@@ -8,8 +8,7 @@ parser = argparse.ArgumentParser(description='Preprocess photometry data')
 parser.add_argument('--s405', help='405 file', type=str)
 parser.add_argument('--s470', help='470 file', type=str)
 parser.add_argument('--freq', help='sampling frequency for output (Hz)', type=float)
-parser.add_argument('--outfile', help='specify path for output XLSX file', \
-                    default='470.xlsx')
+parser.add_argument('--outfile', help='specify output CSV file name')
 parser.add_argument('--inspect', help='visually inspect data for filtering', \
                     action='store_true')
 parser.add_argument('--time_start', help='time after which data is reliable',
@@ -136,4 +135,8 @@ s470['Sampling_Freq'] = args.freq
 for item in ['Sampling_Freq', 'TIME', 'D0', 'norm']:
     columns_to_keep.append(item)
 s470 = s470[columns_to_keep]
-s470.to_csv(args.outfile, index=False)
+if not args.outfile:
+    sample = re.findall('^[A-Za-z0-9]+', file)[0]
+    s470.to_csv(f"{sample}.csv", index=False)
+else:
+    s470.to_csv(args.outfile, index=False)
