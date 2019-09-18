@@ -1,22 +1,24 @@
-import argparse
-import numpy as np
-import pandas as pd
-import re
+#!/usr/bin/python
 
-parser = argparse.ArgumentParser(description='Combine preprocessed files into one')
-parser.add_argument('--files', help='files to combine', type=str, nargs='*')
-parser.add_argument('--starts', help='time zero for each sample', type=int, nargs='*')
-parser.add_argument('--outfile', help='filename for combined CSV file', \
-                    default='combined.csv')
-args = parser.parse_args()
+'''
+Combine multiple files into a single CSV file.
+'''
 
 # make sure there are enough start times and files
-def check_concodance(files, starts):
+def check_concordance(files, starts):
     if len(files) > len(starts):
         print('Not enough start times specified')
         exit()
     if len(files) < len(starts):
         print('Not enough files specified')
+        exit()
+
+def sampling_check(files):
+    freqs = [pd.read_csv(x, nrows=1).Sampling_Freq for x in files]
+    samples = [re.findall('[A-Za-z0-9]+(?=\.csv)', file)[0] for file in files]
+    df = pd.DataFrame({'samples': samples, 'freqs': freqs})
+    if len(set(freqs)) > 1:
+        print(f"Different sampling frequencies. Run preprocessing.py again on the samples that are different:\n{df}")
         exit()
 
 # find start time for each mouse
@@ -33,6 +35,10 @@ def find_time_limits(df):
     min_time = df.groupby('sample')['TIMErel'].min().max()
     max_time = df.groupby('sample')['TIMErel'].max().min()
     return(min_time, max_time)
+
+def merge_times(df):
+    reference = samples[0]
+    offset_test = df[df['sample'] == reference].head(3)
 
 # reduce the dataset so all samples have the same number of points
 def keep_equal_points(df):
@@ -70,7 +76,22 @@ def spread(df):
 
 # - run -----------------------------------------------------------------------
 if __name__ == '__main__':
-    check_concodance(args.files, args.starts)
+    import argparse
+    import numpy as np
+    import pandas as pd
+    import re
+
+    parser = argparse.ArgumentParser(description='Combine preprocessed files into one')
+    parser.add_argument('--files', help='files to combine', type=str, nargs='*')
+    parser.add_argument('--starts', help='time zero for each sample', type=int, nargs='*')
+    parser.add_argument('--outfile', help='filename for combined CSV file', \
+                        default='combined.csv')
+    parser.add_argument('--tidy', help='output in tidy data format',
+                        action='store_true')
+    args = parser.parse_args()
+
+    check_concordance(args.files, args.starts)
+    sampling_check(args.files)
     samples = [re.findall('[A-Za-z0-9]+(?=\.csv)', file)[0] for file in args.files]
     # initialize a dataframe to put the data into
     combined = pd.DataFrame()
@@ -90,7 +111,9 @@ if __name__ == '__main__':
     combined = combined[(combined['TIMErel'] >= min_time) & \
                         (combined['TIMErel'] <= max_time)]
 
-    combined = spread(combined)
+    # spread data for easier viewing
+    if not args.tidy:
+        combined = spread(combined)
 
     # write to csv
-    combined.to_csv(args.outfile)
+    combined.to_csv(args.outfile, index=False)
