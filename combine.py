@@ -37,41 +37,42 @@ def find_time_limits(df):
     return(min_time, max_time)
 
 def merge_times(df):
+    samples = df['sample'].unique()
     reference = samples[0]
-    offset_test = df[df['sample'] == reference].head(3)
-
-# reduce the dataset so all samples have the same number of points
-def keep_equal_points(df):
-    less_than = df.groupby('sample')['TIMErel'].agg(lambda x: sum(x < 0))
-    more_than = df.groupby('sample')['TIMErel'].agg(lambda x: sum(x > 0))
-    if len(set(less_than)) > 1:
-        less_than = less_than - min(less_than)
-        for i in less_than:
-            if int(less_than[i]) != 0:
-                to_drop = df[df['sample'] == less_than.index[i]]['TIMErel'].nlargest(int(less_than[i])).index
-                df = df.drop(to_drop)
-    if len(set(more_than)) > 1:
-        more_than = more_than - min(more_than)
-        for i in range(len(more_than)):
-            if int(more_than[i]) != 0:
-                to_drop = df[df['sample'] == more_than.index[i]]['TIMErel'].nlargest(int(more_than[i])).index
-                df = df.drop(to_drop)
-    return(df)
+    offset_test = df[df['sample'] == reference].head(3).reset_index()
+    def find_offset(df, sample):
+        other = df[df['sample'] == sample].head(3)
+        timediff = []
+        for i, df in other.iterrows():
+            timediff.append(df['TIMErel'] - offset_test['TIMErel'])
+        closest = [abs(x).idxmin() for x in timediff]
+        diffs = closest - np.arange(3)
+        return pd.Series(diffs).value_counts().idxmax()
+    offsets = [find_offset(df, sample) for sample in samples]
+    for i in np.arange(len(samples)):
+        df.loc[df['sample'] == samples[i], 'idx'] = np.arange(len(df[df['sample'] == samples[i]])) + offsets[i]
+    return df
 
 def spread(df):
     # check that there are equal points in each sample
     pts = df.groupby('sample')['TIMErel'].count()
+    def reshape(df):
+        min_time = df['TIMErel'].min()
+        max_time = df['TIMErel'].max()
+        df = df.pivot(index='idx', columns='sample', values='norm')
+        new_time = np.arange(min_time, max_time, (max_time-min_time)/len(df))
+        df['TIMErel'] = new_time
+        return df
     if len(set(pts)) > 1:
-        df = keep_equal_points(df)
-    # match times for each sample
-    n_pts = int(df.groupby('sample')['TIMErel'].count().unique())
-    n_samples = len(df['sample'].unique())
-    time = df['TIMErel'].iloc[:n_pts]
-    time = time.tolist() * 3
-    df['TIMErel'] = time
-    # spread data
-    df = df.pivot(index='TIMErel', columns='sample', values='norm')
-    return(df)
+        df = merge_times(df)
+        df = reshape(df)
+    else:
+        samples = df['sample'].unique()
+        for i in np.arange(len(samples)):
+            df.loc[df['sample'] == samples[i], 'idx'] = np.arange(len(df[df['sample'] == samples[i]]))
+        df = reshape(df)
+    df.set_index('TIMErel', inplace=True)
+    return df
 
 
 # - run -----------------------------------------------------------------------
@@ -111,9 +112,9 @@ if __name__ == '__main__':
     combined = combined[(combined['TIMErel'] >= min_time) & \
                         (combined['TIMErel'] <= max_time)]
 
-    # spread data for easier viewing
+    # spread data for easier viewing and export to CSV
     if not args.tidy:
         combined = spread(combined)
-
-    # write to csv
-    combined.to_csv(args.outfile, index=False)
+        combined.to_csv(args.outfile)
+    else:
+        combined.to_csv(args.outfile, index=False)
