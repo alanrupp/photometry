@@ -10,23 +10,19 @@ def read_file(file):
         df = df.melt(id_vars='TIMErel', var_name='sample', value_name='norm')
     return df
 
-def summarize(df, group_file):
+def add_group_info(df, group_file):
     groups = pd.read_csv(group_file)
     df = df.join(groups.set_index('sample'), on='sample')
-    df = df.groupby(['TIMErel','group'])['norm'].mean().reset_index()
     return df
 
-def plot(df, plottype, fname, grouping_var=None):
-    if plottype == 'line':
+def plot(df, plottype, fname, grouping_var):
+    if plottype == 'lineplot':
         sns.lineplot(x='TIMErel', y='norm', hue=grouping_var, data=df)
-        plt.xlabel('Time (s)')
-        plt.ylabel('deltaF/F')
-        plt.show()
+        plt.ylabel('\u0394F/F')
     if plottype == 'heatmap':
         df = df.pivot(index='TIMErel', columns='sample', values='norm')
-        sns.heatmap(df.transpose(), cmap="PiYG")
-        plt.xlabel('Time (s)')
-        plt.ylabel('deltaF/F')
+        sns.heatmap(df.transpose(), cmap="PiYG", cbar_kws={'label': '\u0394F/F'})
+    plt.xlabel('Time (s)')
     plt.savefig(fname)
 
 # - run -----------------------------------------------------------------------
@@ -37,26 +33,35 @@ if __name__ == '__main__':
     from matplotlib import pyplot as plt
     import seaborn as sns
 
+    # parse arguments
     parser = argparse.ArgumentParser(description='Plot data')
     parser.add_argument('file', help='data file from combine.py', type=str)
-    parser.add_argument('plottype', help='plot type: "line" or "heatmap"', type=str)
-    parser.add_argument('-xlim', help='x-axis limits, passed as 2 numbers (example: -xlim -10 100)')
-    parser.add_argument('-plotsize', help='figure size in inches (example: -figsize 4 3)',
-                        default=[6, 4])
-    parser.add_argument('-plotname', help='figure name (example: heatmap.png)',
+    parser.add_argument('plottype', help='plot type: "lineplot" or "heatmap"', type=str)
+    parser.add_argument('-xmin', help='x-axis min (example: -xmin -10)')
+    parser.add_argument('-xmax', help='x-axis max (example: -xmax 100)')
+    parser.add_argument('-width', help='figure height in inches (example: -width 5)',
+                        default=6)
+    parser.add_argument('-height', help='figure height in inches (example: -height 5)',
+                        default=4)
+    parser.add_argument('-filename', help='file name (example: -filename heatmap.png)',
                         default='plot.png')
-    parser.add_argument('-groups', help='groups file', default=None)
+    parser.add_argument('-groups', help='grouping file (*.csv)', default=None)
     args = parser.parse_args()
 
-    # configure plot
-    plt.rcParams["figure.figsize"] = [args.plotsize[0], args.plotsize[1]]
-    plt.rcParams['font.sans-serif'] = ['Helvetica', 'Arial', 'Tahoma', 'DejaVu Sans']
+    # configure plot universals
+    plt.rcParams["figure.figsize"] = [args.width, args.height]
+    plt.rcParams['font.sans-serif'] = ['Helvetica', 'Arial', 'Unica', 'Imago',
+                                       'Rail Alphabet', 'Tahoma', 'DejaVu Sans']
     plt.rcParams['font.family'] = "sans-serif"
+    grouping_var=None
 
-    # read in data and plot
+    # read in data
     df = read_file(args.file)
+
+    # add group info is supplied
     if args.groups is not None:
-        df = summarize(df, args.groups)
-        plot(df, args.plottype, args.plotname, 'group', args.plotname)
-    else:
-        plot(df, args.plottype, args.plotname)
+        df = add_group_info(df, args.groups)
+        grouping_var='group'
+
+    # plot
+    plot(df, args.plottype, args.filename, grouping_var)
