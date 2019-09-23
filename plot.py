@@ -15,15 +15,27 @@ def add_group_info(df, group_file):
     df = df.join(groups.set_index('sample'), on='sample')
     return df
 
-def plot(df, plottype, fname, grouping_var):
+def round_time(df):
+    freq = 1/((df['TIMErel'].max()-df['TIMErel'].min())/\
+              df.groupby('sample')['TIMErel'].count()[0])
+    freq = int(round(freq, 0))
+    decimals = len(str(1/freq).split('.')[1])
+    df['TIMErel'] = df['TIMErel'].apply(lambda x: round(x, decimals))
+    return df
+
+def plot(df, plottype, fname, grouping_var=None):
+    print(f"Plotting {plottype} and saving as {fname}. Be patient, this takes time.")
+    plt.axhline(y=0, color='black')
+    plt.axvline(x=0, color='black')
     if plottype == 'lineplot':
         sns.lineplot(x='TIMErel', y='norm', hue=grouping_var, data=df)
         plt.ylabel('\u0394F/F')
-    if plottype == 'heatmap':
+    elif plottype == 'heatmap':
         df = df.pivot(index='TIMErel', columns='sample', values='norm')
         sns.heatmap(df.transpose(), cmap="PiYG", cbar_kws={'label': '\u0394F/F'})
     plt.xlabel('Time (s)')
-    plt.savefig(fname)
+    plt.gca().xaxis.set_major_formatter(StrMethodFormatter('{x:,.0f}'))
+    plt.savefig(fname, dpi=600, pad_inches=0)
 
 # - run -----------------------------------------------------------------------
 if __name__ == '__main__':
@@ -31,14 +43,18 @@ if __name__ == '__main__':
     import numpy as np
     import pandas as pd
     from matplotlib import pyplot as plt
+    from matplotlib.ticker import StrMethodFormatter
     import seaborn as sns
 
     # parse arguments
     parser = argparse.ArgumentParser(description='Plot data')
     parser.add_argument('file', help='data file from combine.py', type=str)
-    parser.add_argument('plottype', help='plot type: "lineplot" or "heatmap"', type=str)
-    parser.add_argument('-xmin', help='x-axis min (example: -xmin -10)')
-    parser.add_argument('-xmax', help='x-axis max (example: -xmax 100)')
+    parser.add_argument('plottype', help='plot type: "lineplot" or "heatmap"',
+                        type=str)
+    parser.add_argument('-xmin', help='x-axis min (example: -xmin -10',
+                        default=None)
+    parser.add_argument('-xmax', help='x-axis max (example: -xmax 100)',
+                        default=None)
     parser.add_argument('-width', help='figure height in inches (example: -width 5)',
                         default=6)
     parser.add_argument('-height', help='figure height in inches (example: -height 5)',
@@ -57,6 +73,15 @@ if __name__ == '__main__':
 
     # read in data
     df = read_file(args.file)
+
+    # filter data by plotting axis min and max
+    if args.xmin is not None:
+        df = df[df['TIMErel'] >= int(args.xmin)]
+    if args.xmax is not None:
+        df = df[df['TIMErel'] <= int(args.xmax)]
+
+    # round data for easier viewing during plotting
+    df = round_time(df)
 
     # add group info is supplied
     if args.groups is not None:
