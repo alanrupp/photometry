@@ -1,6 +1,11 @@
 # Photometry
 Tools for processing and analyzing fiber photometry data.
 
+## Setup
+Go to [Anaconda](https://www.anaconda.com/distribution/) to download and install the Python 3.7 version for your operating system.
+
+Then download this directory using the clone or download button in the upper right. You'll need to unzip the directory to the location where you want to keep the program. Alternatively, you can use `git` to clone the repo with `$ git clone https://github.com/alanrupp/photometry`.
+
 ## Preprocessing
 `preprocess.py` downsamples the dataset to a chosen sampling frequency. It also normalizes the 470 data to the 405 signal, allows data filtering based on time and visual inspection of the raw data. Outputs a CSV with the 405-corrected data.
 
