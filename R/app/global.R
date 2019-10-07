@@ -9,12 +9,11 @@ plot_settings <- list(
 )
 
 return_plot <- function(df, plottype = "line", 
-                        xmin = input$xmin, xmax = NA,
-                        ymin = NA, ymax = NA) {
+                        xmin = input$xmin, xmax = input$xmax,
+                        ymin = input$ymin, ymax = input$ymax) {
   df <- gather(df, -TIMErel, key = "sample", value = "value")
   
   p <- ggplot(df, aes(x = TIMErel)) +
-    plot_settings +
     ylab(sprintf("\u0394F/F")) +
     scale_x_continuous(limits = c(xmin, xmax), expand = c(0, 0))
 
@@ -23,15 +22,18 @@ return_plot <- function(df, plottype = "line",
       geom_line(aes(y = value, color = sample)) +
       geom_hline(aes(yintercept = 0)) +
       ylab(sprintf("\u0394F/F")) +
-      scale_y_continuous(expand = c(0, 0))
+      scale_y_continuous(expand = c(0, 0), limits = c(ymin, ymax)) +
+      plot_settings
   } else if (plottype == "tile") {
     p <- p +
       geom_tile(aes(y = sample, fill = value)) +
       scale_fill_gradient2(low = "#d0587e", mid = "white", high = "#009392",
                            name = sprintf("\u0394F/F"),
-                           na.value = "white") +
+                           na.value = "white",
+                           limits = c(ymin, ymax)) +
       scale_y_discrete(expand = c(0, 0)) +
-      ylab(NULL)
+      ylab(NULL) +
+      plot_settings
   }
   return(p)
 }

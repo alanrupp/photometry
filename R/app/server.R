@@ -12,24 +12,16 @@ shinyServer(function(input, output) {
   
   # - Plot data ---------------------------------------------------------------
   output$plot <- renderPlot(
-    if (input$plottype == "line") {
-      return_plot(filedata(), input$plottype, 
-                  xmin = input$xmin, xmax = input$xmax)
-    } else if (input$plottype == "tile") {
-      return_plot(filedata(), input$plottype, 
-                  xmin = input$xmin, xmax = input$xmax)
-    }
+    return_plot(filedata(), input$plottype, 
+                  xmin = input$xmin, xmax = input$xmax,
+                  ymin = input$ymin, ymax = input$ymax)
   )
   
   # - Save file ---------------------------------------------------------------
   save_fn <- function(plottype) {
-    if (plottype == "line") {
-      return_plot(filedata(), input$plottype, 
-                  xmin = input$xmin, xmax = input$xmax)
-    } else if (plottype == "tile") {
-      return_plot(filedata(), input$plottype, 
-                  xmin = input$xmin, xmax = input$xmax)
-    }
+    return_plot(filedata(), input$plottype, 
+                  xmin = input$xmin, xmax = input$xmax,
+                  ymin = input$ymin, ymax = input$ymax)
   }
   output$save_plot <- downloadHandler(
     filename = "plot.png",
