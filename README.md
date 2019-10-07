@@ -19,6 +19,9 @@ Example:
 `$ python [path/to/photometry]/combine.py --files G584.csv F354.csv --starts 54 68`
 
 ## Plotting
+The main way to plot data is to use the Shiny app. The source code is in `R/app`. The functional app can be found [here](https://shiny.med.umich.edu/apps/ruppa/photometry).
+
+Alternatively, you can use the command line:
 `plot.py` plots the data. Just supply the file from `combine.py` and select the plot type. There are options to change the plot features, for example: output file name (`-filename`), file dimensions (`-height`, `-width`), or plot axis limits (`-xmin`, `-xmax`). Run `python plot.py -h` for more options.
 
 Example:
