@@ -18,15 +18,17 @@ shinyServer(function(input, output) {
   )
   
   # - Save file ---------------------------------------------------------------
-  save_fn <- function(plottype) {
-    return_plot(filedata(), input$plottype, 
+  save_fn <- function(df, plottype, grouped = FALSE) {
+    return_plot(df, input$plottype, 
                   xmin = input$xmin, xmax = input$xmax,
-                  ymin = input$ymin, ymax = input$ymax)
+                  ymin = input$ymin, ymax = input$ymax,
+                grouped = grouped)
   }
   output$save_plot <- downloadHandler(
     filename = "plot.png",
     content = function(file) {
-      ggsave(file, plot = save_fn(input$plottype), dpi = 600, units = "in",
+      ggsave(file, plot = save_fn(filedata(), input$plottype), 
+             dpi = 600, units = "in",
              width = input$width, height = input$height)
     }
   )
@@ -76,11 +78,21 @@ shinyServer(function(input, output) {
         mutate(Group = str_remove(Group, "[0-9]$"))
       df <- left_join(df, groups, by = "sample")
       df <- summarize_groups(df)
+      
+      # - Plot and save
       output$plot <- renderPlot(
         return_plot(df, input$plottype, 
                     xmin = input$xmin, xmax = input$xmax,
                     ymin = input$ymin, ymax = input$ymax,
                     grouped = TRUE)
+      )
+      output$save_plot <- downloadHandler(
+        filename = "plot.png",
+        content = function(file) {
+          ggsave(file, plot = save_fn(df, input$plottype, grouped = TRUE), 
+                 dpi = 600, units = "in",
+                 width = input$width, height = input$height)
+        }
       )
     } 
   })

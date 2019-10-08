@@ -14,7 +14,7 @@ plot_settings <- list(
 return_plot <- function(df, plottype = "line", 
                         xmin = NA, xmax = NA, ymin= NA, ymax = NA,
                         grouped = FALSE) {
-  if (!"sample" %in% colnames(df)) {
+  if (!"sample" %in% colnames(df) & !grouped) {
     df <- gather(df, -TIMErel, key = "sample", value = "value")
   }
   
@@ -31,7 +31,8 @@ return_plot <- function(df, plottype = "line",
       plot_settings
     if (grouped) {
       p <- p + geom_line(aes(y = avg, color = Group)) +
-        geom_ribbon(aes(ymin = avg - sem, ymax = avg + sem), alpha = 0.3)
+        geom_ribbon(aes(ymin = avg - sem, ymax = avg + sem, fill = Group), 
+                    alpha = 0.3, show.legend = FALSE)
     } else {
       p <- p + geom_line(aes(y = value, color = sample))
     }
