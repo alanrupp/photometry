@@ -1,12 +1,15 @@
 library(shiny)
-library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(stringr)
 options(bitmapType = "cairo")
 
 # - Global plot settings ------------------------------------------------------
 plot_settings <- list(
-  theme_classic(),
-  xlab("Time (s)"),
   geom_vline(aes(xintercept = 0)),
+  xlab("Time (s)"),
+  theme_classic(),
   theme(axis.text = element_text(color = "black"))
 )
 
@@ -27,8 +30,7 @@ return_plot <- function(df, plottype = "line",
     p <- p + 
       geom_hline(aes(yintercept = 0)) +
       ylab(sprintf("\u0394F/F")) +
-      scale_y_continuous(expand = c(0, 0), limits = c(ymin, ymax)) +
-      plot_settings
+      scale_y_continuous(expand = c(0, 0), limits = c(ymin, ymax))
     if (grouped) {
       p <- p + geom_line(aes(y = avg, color = Group)) +
         geom_ribbon(aes(ymin = avg - sem, ymax = avg + sem, fill = Group), 
@@ -43,14 +45,14 @@ return_plot <- function(df, plottype = "line",
                            na.value = "white",
                            limits = c(ymin, ymax)) +
       scale_y_discrete(expand = c(0, 0)) +
-      ylab(NULL) +
-      plot_settings
+      ylab(NULL)
     if (grouped) {
       p <- p + geom_tile(aes(y = Group, fill = avg))
     } else {
       p <- p + geom_tile(aes(y = sample, fill = value))
     }
   }
+  p <- p + plot_settings
   return(p)
 }
 
