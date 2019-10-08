@@ -1,3 +1,5 @@
+library(shiny)
+
 # Define UI for application that plots photometry data
 shinyUI(fluidPage(
   

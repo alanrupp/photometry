@@ -3,6 +3,9 @@ library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(stringr)
+library(readr)
+library(purrr)
+library(tibble)
 options(bitmapType = "cairo")
 
 # - Global plot settings ------------------------------------------------------
@@ -17,6 +20,10 @@ plot_settings <- list(
 return_plot <- function(df, plottype = "line", 
                         xmin = NA, xmax = NA, ymin= NA, ymax = NA,
                         grouped = FALSE) {
+  if (is.null(df)) {
+    return(NULL)
+  }
+  
   if (!"sample" %in% colnames(df) & !grouped) {
     df <- gather(df, -TIMErel, key = "sample", value = "value")
   }
@@ -54,17 +61,6 @@ return_plot <- function(df, plottype = "line",
   }
   p <- p + plot_settings
   return(p)
-}
-
-# - Parse groups --------------------------------------------------------------
-parse_groups <- function(n) {
-  groups <- map(seq(n), ~ input$eval(paste("mice", .x)))
-  names(groups) <- map_chr(seq(n), ~ input$eval(paste0("group", .x)))
-  groups <- unlist(groups) %>% as.data.frame() %>%
-    rownames_to_column("group") %>%
-    rename("sample" = ".")
-  df <- left_join(df, groups, by = "sample")
-  return(df)
 }
 
 # - Summarize groups ----------------------------------------------------------

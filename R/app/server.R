@@ -1,3 +1,5 @@
+library(shiny)
+
 # Server actions to plot data
 shinyServer(function(input, output) {
   
