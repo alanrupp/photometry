@@ -4,7 +4,7 @@ shinyUI(fluidPage(
   # Application title
   titlePanel("Photometry data"),
   
-  # Sidebar with a slider input for number of bins 
+  # Sidebar data input, plot settings, and grouping
   sidebarLayout(
     sidebarPanel(
       fileInput("fname", "File:"),
@@ -15,19 +15,20 @@ shinyUI(fluidPage(
       fluidRow(column(width = 6, numericInput("xmin", "Min time (s)", -10)),
                column(width = 6, numericInput("xmax", "Max time (s)", NA))
       ),
-      fluidRow(column(width = 6, numericInput("ymin", "Min dF/F", NA, step = 0.01)),
-               column(width = 6, numericInput("ymax", "Max dF/F", NA, step = 0.01))
+      fluidRow(column(width = 6, numericInput("ymin", "Min ΔF/F", NA, step = 0.01)),
+               column(width = 6, numericInput("ymax", "Max ΔF/F", NA, step = 0.01))
       ),
       tags$hr(),
-      fluidRow(column(width = 6, h3("Groups")),
-               column(width = 2, style = "margin-top: 25px;",
-                      textOutput("groupNum")),
+      fluidRow(column(width = 8, h3("Groups")),
                column(width = 2, style = "margin-top: 25px;",
                       actionButton("add_btn", "+")),
                column(width = 2, style = "margin-top: 25px;",
                       actionButton("rm_btn", "-"))
       ),
-      uiOutput("groupInfo")
+      uiOutput("groupInfo"),
+      fluidRow(column(width = 8),
+               column(width = 4, actionButton("avg", "Average"))
+               )
     ),
     
     # Show plot and save
@@ -36,12 +37,14 @@ shinyUI(fluidPage(
         plotOutput("plot")
       ),
       fluidRow(
-        column(width = 4, numericInput("width", "Width", 6)),
-        column(width = 4, numericInput("height", "Height", 4)),
+        column(width = 4, numericInput("width", "Width (in.)", 6)),
+        column(width = 4, numericInput("height", "Height (in.)", 4)),
         column(width = 4, style = "margin-top: 25px;",
                downloadButton("save_plot", "Save", width = "100%")
                )
-        )
+        ),
+      textOutput("group_list"),
+      tableOutput("group_df")
     )
   )
 ))
