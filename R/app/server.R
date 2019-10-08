@@ -30,5 +30,36 @@ shinyServer(function(input, output) {
              width = input$width, height = input$height)
     }
   )
- 
+  
+  # - Group info --------------------------------------------------------------
+  counter <- reactiveValues(n = 0)
+  
+  observeEvent(input$add_btn, {counter$n <- counter$n + 1})
+  observeEvent(input$rm_btn, {
+    if (counter$n > 0) counter$n <- counter$n - 1
+  })
+  
+  output$groupNum <- renderPrint(cat(counter$n))
+  
+  groupUI <- reactive({
+    df <- filedata()
+    mice <- colnames(df)[colnames(df) != "TIMErel"]
+    if (counter$n > 0) {
+      map(seq(counter$n), 
+          ~ fluidRow(column(width = 6, 
+                            textInput(paste0("group", .x), 
+                                      paste("Group", .x))
+                            ),
+                     column(width = 6, 
+                            selectizeInput("mouseID", "Mice", 
+                                           choices = mice,
+                                           multiple = TRUE)
+                            )
+                     )
+      )
+    }
+  })
+  
+  output$groupInfo <- renderUI({ groupUI() })
+  
 })
