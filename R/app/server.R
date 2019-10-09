@@ -2,7 +2,6 @@ library(shiny)
 library(stringr)
 library(purrr)
 library(tidyr)
-library(tibble)
 library(dplyr)
 library(ggplot2)
 
@@ -80,10 +79,10 @@ shinyServer(function(input, output) {
       group_names <- map_chr(group_ids, ~ input[[.x]])
       groups <- map(seq(counter$n), ~ input[[paste0("mice", .x)]])
       names(groups) <- group_names
-      groups <- unlist(groups) %>% as.data.frame() %>%
-        rownames_to_column("Group") %>%
-        rename("sample" = ".") %>%
-        mutate(Group = stringr::str_remove(Group, "[0-9]$"))
+      groups <- unlist(groups) %>% as.data.frame()
+      groups$Group <- rownames(groups)
+      groups$sample <- groups$`.`
+      groups$Group <- stringr::str_remove(groups$Group, "[0-9]$")
       df <- left_join(df, groups, by = "sample")
       df <- summarize_groups(df)
       
