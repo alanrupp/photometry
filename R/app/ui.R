@@ -44,9 +44,7 @@ shinyUI(fluidPage(
         column(width = 4, style = "margin-top: 25px;",
                downloadButton("save_plot", "Save", width = "100%")
                )
-        ),
-      textOutput("group_list"),
-      tableOutput("group_df")
+        )
     )
   )
 ))
