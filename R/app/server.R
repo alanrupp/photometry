@@ -1,4 +1,10 @@
 library(shiny)
+library(stringr)
+library(purrr)
+library(tidyr)
+library(tibble)
+library(dplyr)
+library(ggplot2)
 
 # Server actions to plot data
 shinyServer(function(input, output) {
@@ -47,7 +53,7 @@ shinyServer(function(input, output) {
     df <- filedata()
     mice <- colnames(df)[colnames(df) != "TIMErel"]
     if (counter$n > 0) {
-      map(seq(counter$n), 
+      map(1:counter$n, 
           ~ fluidRow(
             column(width = 6, 
                    textInput(paste0("group", .x), paste("Group", .x))
@@ -77,7 +83,7 @@ shinyServer(function(input, output) {
       groups <- unlist(groups) %>% as.data.frame() %>%
         rownames_to_column("Group") %>%
         rename("sample" = ".") %>%
-        mutate(Group = str_remove(Group, "[0-9]$"))
+        mutate(Group = stringr::str_remove(Group, "[0-9]$"))
       df <- left_join(df, groups, by = "sample")
       df <- summarize_groups(df)
       
