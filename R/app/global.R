@@ -2,7 +2,7 @@ library(shiny)
 library(tidyr)
 library(dplyr)
 library(ggplot2)
-#options(bitmapType = "cairo")
+options(bitmapType = "cairo")
 
 # - Global plot settings ------------------------------------------------------
 plot_settings <- list(
@@ -59,8 +59,7 @@ return_plot <- function(df, plottype = "line",
 
 # - Summarize groups ----------------------------------------------------------
 summarize_groups <- function(df) {
-  df %>% 
-    group_by(Group, TIMErel) %>%
-    summarize("avg" = mean(value, na.rm = TRUE),
-              "sem" = sd(value, na.rm = TRUE) / sqrt(n()))
+  df <- group_by(df, Group, TIMErel) 
+  df <- summarize(df, "avg" = mean(value, na.rm = TRUE),
+                  "sem" = sd(value, na.rm = TRUE) / sqrt(n()))
 }

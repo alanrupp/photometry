@@ -63,10 +63,10 @@ shinyServer(function(input, output) {
       names(groups) <- group_names
       groups <- unlist(groups) %>% as.data.frame()
       groups$Group <- rownames(groups)
-      groups$sample <- groups$`.`
+      colnames(groups) <- c("sample", "Group")
       groups$Group <- gsub("[0-9]$", "", groups$Group)
-      v$tidy_df <- left_join(v$tidy_df, groups, by = "sample") %>% 
-        summarize_groups()
+      v$tidy_df <- left_join(v$tidy_df, groups, by = "sample") 
+      v$tidy_df <- summarize_groups(v$tidy_df)
       }
   })
   
