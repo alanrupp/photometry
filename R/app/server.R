@@ -1,6 +1,4 @@
 library(shiny)
-library(stringr)
-library(purrr)
 library(tidyr)
 library(dplyr)
 library(ggplot2)
@@ -9,99 +7,105 @@ library(ggplot2)
 shinyServer(function(input, output) {
   
   # - Read in data ------------------------------------------------------------
+  v <- reactiveValues(df = NULL)
   filedata <- reactive({
     infile <- input$fname
     if (is.null(infile)) {
       return(NULL)
     }
-    read_csv(infile$datapath)
+    read.csv(infile$datapath, stringsAsFactors = FALSE)
   })
   
-  # - Plot data ---------------------------------------------------------------
-  output$plot <- renderPlot(
-    return_plot(filedata(), input$plottype, 
-                  xmin = input$xmin, xmax = input$xmax,
-                  ymin = input$ymin, ymax = input$ymax)
-  )
+  observeEvent(input$fname, {
+    isolate({
+      v$df <- filedata()
+    })
+  })
   
-  # - Save file ---------------------------------------------------------------
-  save_fn <- function(df, plottype, grouped = FALSE) {
-    return_plot(df, input$plottype, 
-                  xmin = input$xmin, xmax = input$xmax,
-                  ymin = input$ymin, ymax = input$ymax,
-                grouped = grouped)
-  }
-  output$save_plot <- downloadHandler(
-    filename = "plot.png",
-    content = function(file) {
-      ggsave(file, plot = save_fn(filedata(), input$plottype), 
-             dpi = 600, units = "in",
-             width = input$width, height = input$height)
-    }
-  )
-  
-  # - Group info --------------------------------------------------------------
+  # - Get group info ----------------------------------------------------------
   counter <- reactiveValues(n = 0)
   
+  # generate a new group UI with every push of `+` button
   observeEvent(input$add_btn, {counter$n <- counter$n + 1})
   observeEvent(input$rm_btn, {
     if (counter$n > 0) counter$n <- counter$n - 1
   })
   
   groupUI <- reactive({
-    df <- filedata()
-    mice <- colnames(df)[colnames(df) != "TIMErel"]
+    mice <- colnames(v$df)[colnames(v$df) != "TIMErel"]
     if (counter$n > 0) {
-      map(1:counter$n, 
-          ~ fluidRow(
-            column(width = 6, 
-                   textInput(paste0("group", .x), paste("Group", .x))
-                   ),
-            column(width = 6, 
-                   selectizeInput(paste0("mice", .x), "Mice", choices = mice,
-                                  multiple = TRUE)
-                   )
-            )
-      )
-    }
-  })
+      lapply(1:counter$n, 
+             function(x) fluidRow(
+               column(width = 6, 
+                      textInput(paste0("group", x), paste("Group", x))
+                      ),
+               column(width = 6, 
+                      selectizeInput(paste0("mice", x), "Mice", choices = mice,
+                                     multiple = TRUE)
+                      )
+               )
+             )
+      }
+    })
   
   output$groupInfo <- renderUI({ groupUI() })
   
   # - Group data --------------------------------------------------------------
   observeEvent(input$avg, {
-    df <- filedata()
-    if (!"sample" %in% colnames(df)) {
-      df <- gather(df, -TIMErel, key = "sample", value = "value")
-    }
+    validate(
+      need(!is.null(v$df), "Upload a dataset")
+    )
+    if (!"sample" %in% colnames(v$df)) {
+        v$tidy_df <- gather(v$df, -TIMErel, key = "sample", value = "value")
+      }
     if (counter$n > 0) {
-      group_ids <- map_chr(seq(counter$n), ~ paste0("group", .x))
-      group_names <- map_chr(group_ids, ~ input[[.x]])
-      groups <- map(seq(counter$n), ~ input[[paste0("mice", .x)]])
+      group_ids <- sapply(1:counter$n, function(x) paste0("group", x))
+      group_names <- sapply(group_ids, function(x) input[[x]])
+      groups <- lapply(1:counter$n, function(x) input[[paste0("mice", x)]])
       names(groups) <- group_names
       groups <- unlist(groups) %>% as.data.frame()
       groups$Group <- rownames(groups)
       groups$sample <- groups$`.`
-      groups$Group <- stringr::str_remove(groups$Group, "[0-9]$")
-      df <- left_join(df, groups, by = "sample")
-      df <- summarize_groups(df)
-      
-      # - Plot and save
+      groups$Group <- gsub("[0-9]$", "", groups$Group)
+      v$group_df <- left_join(v$tidy_df, groups, by = "sample") %>% 
+        summarize_groups()
+      }
+  })
+  
+  # - Plot data ---------------------------------------------------------------
+  observeEvent(input$plot_btn, {
+    if (!is.null(v$group_df)) {
       output$plot <- renderPlot(
-        return_plot(df, input$plottype, 
+        return_plot(v$group_df, input$plottype, 
                     xmin = input$xmin, xmax = input$xmax,
                     ymin = input$ymin, ymax = input$ymax,
                     grouped = TRUE)
       )
-      output$save_plot <- downloadHandler(
-        filename = "plot.png",
-        content = function(file) {
-          ggsave(file, plot = save_fn(df, input$plottype, grouped = TRUE), 
-                 dpi = 600, units = "in",
-                 width = input$width, height = input$height)
-        }
+    } else {
+      output$plot <- renderPlot(
+        return_plot(v$tidy_df, input$plottype, 
+                    xmin = input$xmin, xmax = input$xmax,
+                    ymin = input$ymin, ymax = input$ymax,
+                    grouped = FALSE)
       )
-    } 
+    }
   })
+  
+  
+  # - Save file ---------------------------------------------------------------
+  save_fn <- function(df, plottype, grouped = FALSE) {
+    return_plot(df, input$plottype, 
+                xmin = input$xmin, xmax = input$xmax,
+                ymin = input$ymin, ymax = input$ymax,
+                grouped = grouped)
+  }
+  output$save_plot <- downloadHandler(
+    filename = "plot.png",
+    content = function(file) {
+      ggsave(file, plot = save_fn(v$df, input$plottype), 
+             dpi = 600, units = "in",
+             width = input$width, height = input$height)
+    }
+  )
   
 })

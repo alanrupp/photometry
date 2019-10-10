@@ -6,7 +6,7 @@ shinyUI(fluidPage(
   # Application title
   titlePanel("Photometry data"),
   
-  # Sidebar data input, plot settings, and grouping
+  # - SIDEBAR: Data input, plot settings, and grouping ------------------------
   sidebarLayout(
     sidebarPanel(
       fileInput("fname", "File:"),
@@ -17,8 +17,12 @@ shinyUI(fluidPage(
       fluidRow(column(width = 6, numericInput("xmin", "Min time (s)", -10)),
                column(width = 6, numericInput("xmax", "Max time (s)", NA))
       ),
-      fluidRow(column(width = 6, numericInput("ymin", "Min ΔF/F", NA, step = 0.01)),
-               column(width = 6, numericInput("ymax", "Max ΔF/F", NA, step = 0.01))
+      fluidRow(column(width = 6, numericInput("ymin", "Min ΔF/F", NA, 
+                                              step = 0.01)
+                      ),
+               column(width = 6, numericInput("ymax", "Max ΔF/F", NA, 
+                                              step = 0.01)
+                      )
       ),
       tags$hr(),
       fluidRow(column(width = 8, h3("Groups")),
@@ -28,12 +32,12 @@ shinyUI(fluidPage(
                       actionButton("rm_btn", "-"))
       ),
       uiOutput("groupInfo"),
-      fluidRow(column(width = 8),
-               column(width = 4, actionButton("avg", "Average"))
-               )
+      actionButton("avg", "Average", width = "100%", style = "margin-top: 10px;"),
+      tags$hr(),
+      actionButton("plot_btn", "Plot", width = "100%")
     ),
     
-    # Show plot and save
+    # - MAIN: Show plot and save ----------------------------------------------
     mainPanel(
       fluidRow(
         plotOutput("plot")

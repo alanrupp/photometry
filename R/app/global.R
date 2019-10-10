@@ -1,11 +1,8 @@
 library(shiny)
-library(ggplot2)
-library(dplyr)
 library(tidyr)
-library(readr)
-library(purrr)
-library(tibble)
-options(bitmapType = "cairo")
+library(dplyr)
+library(ggplot2)
+#options(bitmapType = "cairo")
 
 # - Global plot settings ------------------------------------------------------
 plot_settings <- list(
