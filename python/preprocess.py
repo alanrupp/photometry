@@ -13,6 +13,8 @@ parser.add_argument('--inspect', help='visually inspect data for filtering', \
                     action='store_true')
 parser.add_argument('--time_start', help='time after which data is reliable',
                     default=0)
+parser.add_argument('--show', help='show filtered 470 trace when complete',
+                    action='store_true')
 args = parser.parse_args()
 
 # user input the location of the files
@@ -109,12 +111,13 @@ s405_scaled = lm.predict(np.array(s405.D0).reshape(-1,1))
 # normalize 470 data to scaled 405
 s470['norm'] = (s470['D0']-s405_scaled)/s405_scaled
 # plotting normalized data (this might be slow for high sample frequencies)
-plt.plot(s470.TIME, s470.norm, '-')
-plt.axhline(0, color='black')
-plt.title("470 normalized")
-plt.xlabel('Time (s)')
-plt.ylabel('Signal (normalized)')
-plt.show()
+if args.show:
+    plt.plot(s470.TIME, s470.norm, '-')
+    plt.axhline(0, color='black')
+    plt.title("470 normalized")
+    plt.xlabel('Time (s)')
+    plt.ylabel('Signal (normalized)')
+    plt.show()
 
 # - write data to XLSX --------------------------------------------------------
 print('\nWriting output to CSV file: ' + args.outfile)
