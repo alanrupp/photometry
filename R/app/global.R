@@ -14,15 +14,13 @@ plot_settings <- list(
 
 # - Return plot ---------------------------------------------------------------
 return_plot <- function(df, plottype = "line", 
-                        xmin = NA, xmax = NA, ymin= NA, ymax = NA,
-                        grouped = FALSE) {
+                        xmin = NA, xmax = NA, ymin= NA, ymax = NA) {
   if (is.null(df)) {
     return(NULL)
   }
   
-  if (!"sample" %in% colnames(df) & !grouped) {
-    df <- gather(df, -TIMErel, key = "sample", value = "value")
-  }
+  # detect if grouped
+  grouped <- ifelse("Group" %in% colnames(df), TRUE, FALSE)
   
   # main plot
   p <- ggplot(df, aes(x = TIMErel)) +

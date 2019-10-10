@@ -19,6 +19,7 @@ shinyServer(function(input, output) {
   observeEvent(input$fname, {
     isolate({
       v$df <- filedata()
+      v$tidy_df <- gather(v$df, -TIMErel, key = "sample", value = "value")
     })
   })
   
@@ -55,9 +56,6 @@ shinyServer(function(input, output) {
     validate(
       need(!is.null(v$df), "Upload a dataset")
     )
-    if (!"sample" %in% colnames(v$df)) {
-        v$tidy_df <- gather(v$df, -TIMErel, key = "sample", value = "value")
-      }
     if (counter$n > 0) {
       group_ids <- sapply(1:counter$n, function(x) paste0("group", x))
       group_names <- sapply(group_ids, function(x) input[[x]])
@@ -67,42 +65,29 @@ shinyServer(function(input, output) {
       groups$Group <- rownames(groups)
       groups$sample <- groups$`.`
       groups$Group <- gsub("[0-9]$", "", groups$Group)
-      v$group_df <- left_join(v$tidy_df, groups, by = "sample") %>% 
+      v$tidy_df <- left_join(v$tidy_df, groups, by = "sample") %>% 
         summarize_groups()
       }
   })
   
   # - Plot data ---------------------------------------------------------------
+  plot_data <- reactiveValues("plot" = NULL)
   observeEvent(input$plot_btn, {
-    if (!is.null(v$group_df)) {
-      output$plot <- renderPlot(
-        return_plot(v$group_df, input$plottype, 
-                    xmin = input$xmin, xmax = input$xmax,
-                    ymin = input$ymin, ymax = input$ymax,
-                    grouped = TRUE)
+    
+    plot_data$plot <- return_plot(v$tidy_df, input$plottype, 
+                                  xmin = input$xmin, xmax = input$xmax,
+                                  ymin = input$ymin, ymax = input$ymax)
+    output$plot <- renderPlot(
+        plot_data$plot
       )
-    } else {
-      output$plot <- renderPlot(
-        return_plot(v$tidy_df, input$plottype, 
-                    xmin = input$xmin, xmax = input$xmax,
-                    ymin = input$ymin, ymax = input$ymax,
-                    grouped = FALSE)
-      )
-    }
   })
   
   
   # - Save file ---------------------------------------------------------------
-  save_fn <- function(df, plottype, grouped = FALSE) {
-    return_plot(df, input$plottype, 
-                xmin = input$xmin, xmax = input$xmax,
-                ymin = input$ymin, ymax = input$ymax,
-                grouped = grouped)
-  }
   output$save_plot <- downloadHandler(
     filename = "plot.png",
     content = function(file) {
-      ggsave(file, plot = save_fn(v$df, input$plottype), 
+      ggsave(file, plot = plot_data$plot, 
              dpi = 600, units = "in",
              width = input$width, height = input$height)
     }
