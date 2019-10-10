@@ -6,8 +6,10 @@ library(ggplot2)
 # Server actions to plot data
 shinyServer(function(input, output) {
   
+  # set up reactive values
+  v <- reactiveValues(df = NULL, n = 0, plot = NULL)
+  
   # - Read in data ------------------------------------------------------------
-  v <- reactiveValues(df = NULL)
   filedata <- reactive({
     infile <- input$fname
     if (is.null(infile)) {
@@ -24,18 +26,16 @@ shinyServer(function(input, output) {
   })
   
   # - Get group info ----------------------------------------------------------
-  counter <- reactiveValues(n = 0)
-  
   # generate a new group UI with every push of `+` button
-  observeEvent(input$add_btn, {counter$n <- counter$n + 1})
+  observeEvent(input$add_btn, {v$n <- v$n + 1})
   observeEvent(input$rm_btn, {
-    if (counter$n > 0) counter$n <- counter$n - 1
+    if (v$n > 0) v$n <- v$n - 1
   })
   
   groupUI <- reactive({
     mice <- colnames(v$df)[colnames(v$df) != "TIMErel"]
-    if (counter$n > 0) {
-      lapply(1:counter$n, 
+    if (v$n > 0) {
+      lapply(1:v$n, 
              function(x) fluidRow(
                column(width = 6, 
                       textInput(paste0("group", x), paste("Group", x))
@@ -56,10 +56,10 @@ shinyServer(function(input, output) {
     validate(
       need(!is.null(v$df), "Upload a dataset")
     )
-    if (counter$n > 0) {
-      group_ids <- sapply(1:counter$n, function(x) paste0("group", x))
+    if (v$n > 0) {
+      group_ids <- sapply(1:v$n, function(x) paste0("group", x))
       group_names <- sapply(group_ids, function(x) input[[x]])
-      groups <- lapply(1:counter$n, function(x) input[[paste0("mice", x)]])
+      groups <- lapply(1:v$n, function(x) input[[paste0("mice", x)]])
       names(groups) <- group_names
       groups <- unlist(groups) %>% as.data.frame()
       groups$Group <- rownames(groups)
@@ -71,15 +71,11 @@ shinyServer(function(input, output) {
   })
   
   # - Plot data ---------------------------------------------------------------
-  plot_data <- reactiveValues("plot" = NULL)
   observeEvent(input$plot_btn, {
-    
-    plot_data$plot <- return_plot(v$tidy_df, input$plottype, 
-                                  xmin = input$xmin, xmax = input$xmax,
-                                  ymin = input$ymin, ymax = input$ymax)
-    output$plot <- renderPlot(
-        plot_data$plot
-      )
+    v$plot <- return_plot(v$tidy_df, input$plottype, 
+                          xmin = input$xmin, xmax = input$xmax,
+                          ymin = input$ymin, ymax = input$ymax)
+    output$plot <- renderPlot(v$plot)
   })
   
   
@@ -87,9 +83,9 @@ shinyServer(function(input, output) {
   output$save_plot <- downloadHandler(
     filename = "plot.png",
     content = function(file) {
-      ggsave(file, plot = plot_data$plot, 
-             dpi = 600, units = "in",
-             width = input$width, height = input$height)
+      ggsave(file, plot = v$plot, device = "png",
+             width = input$width, height = input$height,
+             units = "in", dpi = 600)
     }
   )
   
