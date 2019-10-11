@@ -63,3 +63,12 @@ summarize_groups <- function(df) {
   df <- summarize(df, "avg" = mean(value, na.rm = TRUE),
                   "sem" = sd(value, na.rm = TRUE) / sqrt(n()))
 }
+
+# - Downsample ----------------------------------------------------------------
+downsample <- function(df) {
+  df <- mutate(df, TIMErel = as.integer(TIMErel))
+  df <- group_by(df, sample, TIMErel)
+  df <- summarize(df, "value" = mean(value, na.rm = TRUE))
+  df <- ungroup(df)
+  return(df)
+}

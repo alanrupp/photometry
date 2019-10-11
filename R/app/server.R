@@ -22,15 +22,14 @@ shinyServer(function(input, output) {
     isolate({
       v$df <- filedata()
       v$tidy_df <- gather(v$df, -TIMErel, key = "sample", value = "value")
+      v$tidy_df <- downsample(v$tidy_df)
     })
   })
   
   # - Get group info ----------------------------------------------------------
   # generate a new group UI with every push of `+` button
-  observeEvent(input$add_btn, {v$n <- v$n + 1})
-  observeEvent(input$rm_btn, {
-    if (v$n > 0) v$n <- v$n - 1
-  })
+  observeEvent(input$add_btn, { v$n <- v$n + 1 })
+  observeEvent(input$rm_btn, { if (v$n > 0) v$n <- v$n - 1 })
   
   groupUI <- reactive({
     mice <- colnames(v$df)[colnames(v$df) != "TIMErel"]
